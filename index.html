@@ -4469,7 +4469,7 @@ window.addEventListener('click',e=>{
 // ═══════════════════════════════════════════════════════
 //  GOOGLE DRIVE INTEGRATION
 // ═══════════════════════════════════════════════════════
-const GDRIVE_CLIENT_ID = '748711010076-j0kcj6q1p7j52iruptunha9ue7536q5h.apps.googleusercontent.com';
+const GDRIVE_CLIENT_ID = '291473106610-1690j22h5on8hpmo3g5dj6g7a9uu904a.apps.googleusercontent.com';
 const GDRIVE_SCOPES    = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 const GDRIVE_FOLDER    = 'MonBudget-CI-Backups';
 const GDRIVE_BACKUP_PREFIX = 'monbudget_ci_backup_';
@@ -4538,7 +4538,7 @@ function hideProgress(){
 
 // ── Connexion Google OAuth ───────────────────────────────
 function gdriveConnect(){
-  const redirectUri = window.location.origin + window.location.pathname;
+  const redirectUri = window.location.origin;
   const params = new URLSearchParams({
     client_id: GDRIVE_CLIENT_ID,
     redirect_uri: redirectUri,
