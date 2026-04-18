@@ -901,6 +901,9 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
         <div class="nav-item" onclick="goToPage('categories')" data-page="categories">
           <span class="ni">🏷️</span><span class="nl">Catégories</span>
         </div>
+        <div class="nav-item admin-only" onclick="goToPage('comptes')" data-page="comptes">
+          <span class="ni">🏦</span><span class="nl">Comptes</span>
+        </div>
         <div class="nav-item" onclick="goToPage('profile')" data-page="profile">
           <span class="ni">⚙️</span><span class="nl">Mon profil</span>
         </div>
@@ -992,11 +995,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
           <select id="filterDepSpender" onchange="renderDepenses()">
             <option value="">Tous dépensiers</option>
           </select>
-          <select id="filterDepCompte" onchange="renderDepenses()">
-            <option value="">Tous comptes</option>
-            <option value="mobile">📱 Compte Mobile</option>
-            <option value="espece">💵 Espèces</option>
-          </select>
+          <select id="filterDepCompte" onchange="renderDepenses()"><option value="">Tous comptes</option></select>
           <button class="btn btn-ghost btn-sm" onclick="clearFiltersDepenses()">✕ Effacer</button>
         </div>
         <div class="table-wrap">
@@ -1026,11 +1025,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
           <input type="date" id="filterRevFrom" onchange="renderRevenus()">
           <input type="date" id="filterRevTo" onchange="renderRevenus()">
           <input type="text" id="filterRevSearch" placeholder="🔍 Rechercher…" oninput="renderRevenus()">
-          <select id="filterRevCompte" onchange="renderRevenus()">
-            <option value="">Tous comptes</option>
-            <option value="mobile">📱 Compte Mobile</option>
-            <option value="espece">💵 Espèces</option>
-          </select>
+          <select id="filterRevCompte" onchange="renderRevenus()"><option value="">Tous comptes</option></select>
         </div>
         <div class="table-wrap">
           <table>
@@ -1114,11 +1109,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label">Compte</label>
-                <select id="periodeCompte" class="form-select">
-                  <option value="">Tous</option>
-                  <option value="mobile">📱 Compte Mobile</option>
-                  <option value="espece">💵 Espèces</option>
-                </select>
+                <select id="periodeCompte" class="form-select"><option value="">Tous</option></select>
               </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary btn-sm" onclick="genRapportPeriode()" style="flex:1">🔍 Générer</button>
@@ -1237,7 +1228,21 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
       </div>
 
       <!-- ─── PAGE: CATÉGORIES ─── -->
-      <div class="page" id="page-categories">
+      <!-- ─── PAGE: COMPTES ─── -->
+      <div class="page" id="page-comptes">
+        <div class="section-header">
+          <div>
+            <div class="section-title">🏦 Comptes</div>
+            <div class="section-subtitle">Gérez vos comptes (Mobile, Espèces, Emprunt…)</div>
+          </div>
+          <button class="btn btn-success btn-sm admin-only no-print" onclick="openCompteModal()">➕ Ajouter</button>
+        </div>
+        <div class="card">
+          <div id="compteList"></div>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: CATEGORIES ─── -->
         <div class="section-header">
           <div class="section-title">🏷️ Catégories</div>
           <button class="btn btn-success btn-sm admin-only no-print" onclick="openCatModal()">➕ Ajouter</button>
@@ -1402,6 +1407,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
             <div class="drive-actions">
               <button class="btn-drive" onclick="gdriveSyncNow()">☁️ Sauvegarder</button>
               <button class="btn-drive restore" onclick="gdriveOpenRestoreList()">📥 Restaurer</button>
+              <button class="btn-drive" onclick="gdriveAddAccount()" style="border-color:rgba(52,211,153,.3);color:var(--accent3)">➕ Autre compte</button>
               <button class="btn-drive disconnect" onclick="gdriveDisconnect()">🔌 Déconnecter</button>
             </div>
             <div class="drive-auto-row">
@@ -1496,10 +1502,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
       </div>
       <div class="form-group">
         <label class="form-label">Compte *</label>
-        <select class="form-select" id="depCompte">
-          <option value="mobile">📱 Compte Mobile</option>
-          <option value="espece">💵 Espèces</option>
-        </select>
+        <select class="form-select" id="depCompte"></select>
       </div>
       <div class="form-group">
         <label class="form-label">Note (optionnel)</label>
@@ -1537,10 +1540,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
       </div>
       <div class="form-group">
         <label class="form-label">Compte *</label>
-        <select class="form-select" id="revCompte">
-          <option value="mobile">📱 Compte Mobile</option>
-          <option value="espece">💵 Espèces</option>
-        </select>
+        <select class="form-select" id="revCompte"></select>
       </div>
       <div class="form-group">
         <label class="form-label">Note (optionnel)</label>
@@ -1589,6 +1589,58 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
 </div>
 
 <!-- Modal Catégorie -->
+<!-- Modal Compte -->
+<div class="modal-overlay" id="modalCompte">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🏦 Compte</div>
+      <button class="modal-close" onclick="closeModal('modalCompte')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Presets rapides -->
+      <div class="form-group">
+        <label class="form-label">Modèles rapides</label>
+        <div id="cmpPresets" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"></div>
+      </div>
+
+      <!-- Aperçu + upload image -->
+      <div class="form-group">
+        <label class="form-label">Logo / Image du compte</label>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+          <div id="cmpImgPreview" onclick="document.getElementById('cmpImgInput').click()" style="width:56px;height:56px;border-radius:14px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;overflow:hidden;flex-shrink:0;background:var(--card2)" title="Cliquer pour changer">🏦</div>
+          <div style="flex:1">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cmpImgInput').click()" style="width:100%;margin-bottom:6px">📁 Choisir une image</button>
+            <button class="btn btn-ghost btn-sm" id="cmpImgRemoveBtn" onclick="cmpRemoveImage()" style="width:100%;display:none;color:var(--danger)">🗑️ Supprimer l'image</button>
+          </div>
+          <input type="file" id="cmpImgInput" accept="image/*" style="display:none" onchange="cmpLoadImage(event)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Icône (si pas d'image)</label>
+        <input class="form-input" id="cmpIcon" placeholder="Ex: 📱 💵 🏦 💳" maxlength="4">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom *</label>
+        <input class="form-input" id="cmpNom" placeholder="Ex: Wave, MTN, Orange, Familial…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Couleur</label>
+        <input type="color" id="cmpCouleur" value="#38bdf8" style="width:60px;height:36px;background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Solde initial (FCFA)</label>
+        <input class="form-input" type="number" id="cmpSolde" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCompte')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveCompte()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalCat">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1645,17 +1697,11 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">De (compte source) *</label>
-          <select class="form-select" id="trDe" onchange="updateTransfertPreview()">
-            <option value="espece">💵 Espèces</option>
-            <option value="mobile">📱 Compte Mobile</option>
-          </select>
+          <select class="form-select" id="trDe" onchange="updateTransfertPreview()"></select>
         </div>
         <div class="form-group">
           <label class="form-label">Vers (compte cible) *</label>
-          <select class="form-select" id="trVers" onchange="updateTransfertPreview()">
-            <option value="mobile">📱 Compte Mobile</option>
-            <option value="espece">💵 Espèces</option>
-          </select>
+          <select class="form-select" id="trVers" onchange="updateTransfertPreview()"></select>
         </div>
       </div>
 
@@ -1954,6 +2000,7 @@ function initApp(){
 
   goToPage('dashboard');
   loadSavedAppImages();
+  refreshCompteSelects();
 }
 
 function setAvatar(id, photo, name){
@@ -2002,6 +2049,7 @@ function goToPage(page){
     case 'depensiers': renderDepensiers(); break;
     case 'rapports': initRapportsPage(); break;
     case 'categories': renderCategories(); break;
+    case 'comptes': renderComptes(); break;
     case 'profile': renderProfile(); break;
     case 'sauvegarde': renderSauvegarde(); break;
     case 'utilisateurs': renderUsers(); break;
@@ -2367,8 +2415,11 @@ function getCompte(id){
 }
 function compteChip(compteId){
   const c = getCompte(compteId);
-  const cls = compteId==='mobile'?'compte-mobile':'compte-espece';
-  return `<span class="${cls}">${c.icon} ${c.nom}</span>`;
+  const logo = cmpGetLogo(c.id);
+  const thumb = logo
+    ? `<img src="${logo}" style="width:14px;height:14px;border-radius:3px;object-fit:cover;vertical-align:middle;margin-right:4px">`
+    : `<span style="margin-right:3px">${c.icon}</span>`;
+  return `<span style="background:${c.couleur}22;color:${c.couleur};border:1px solid ${c.couleur}44;padding:2px 9px 2px 6px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center">${thumb}${c.nom}</span>`;
 }
 function isAdmin(){return currentUser&&currentUser.role==='admin'}
 
@@ -2417,9 +2468,11 @@ function renderDashboard(){
   // today
   const todayDep = db.depenses.filter(d=>d.date===today()).reduce((s,d)=>s+Number(d.montant),0);
 
-  // Soldes par compte (incluant transferts)
-  const solde_mobile = getSoldeCompte('mobile');
-  const solde_espece = getSoldeCompte('espece');
+  // Soldes dynamiques par compte
+  const comptesStatCards = Object.values(db.comptes||{}).map(c=>{
+    const s = getSoldeCompte(c.id);
+    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+  }).join('');
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card green">
@@ -2428,18 +2481,7 @@ function renderDashboard(){
       <div class="stat-value" style="color:${solde>=0?'var(--accent3)':'var(--danger)'}">${fmt(solde)}</div>
       <div class="stat-sub">Revenus – Dépenses</div>
     </div>
-    <div class="stat-card blue">
-      <div class="stat-icon">📱</div>
-      <div class="stat-label">Solde Compte Mobile</div>
-      <div class="stat-value" style="color:${solde_mobile>=0?'var(--accent)':'var(--danger)'}">${fmt(solde_mobile)}</div>
-      <div class="stat-sub">Orange Money / Wave…</div>
-    </div>
-    <div class="stat-card green">
-      <div class="stat-icon">💵</div>
-      <div class="stat-label">Solde Espèces</div>
-      <div class="stat-value" style="color:${solde_espece>=0?'var(--accent3)':'var(--danger)'}">${fmt(solde_espece)}</div>
-      <div class="stat-sub">Argent liquide</div>
-    </div>
+    ${comptesStatCards}
     <div class="stat-card blue">
       <div class="stat-icon">📥</div>
       <div class="stat-label">Total revenus</div>
@@ -2809,16 +2851,17 @@ function renderRevenus(){
   const totalDep=db.depenses.reduce((s,d)=>s+Number(d.montant),0);
   const solde=totalRev-totalDep;
 
-  // Calcul soldes par compte (incluant transferts)
-  const solde_mobile = getSoldeCompte('mobile');
-  const solde_espece = getSoldeCompte('espece');
+  // Soldes dynamiques par compte
+  const revCompteCards = Object.values(db.comptes||{}).map(c=>{
+    const s = getSoldeCompte(c.id);
+    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+  }).join('');
 
   document.getElementById('revStats').innerHTML=`
     <div class="stat-card green"><div class="stat-icon">📥</div><div class="stat-label">Total revenus</div><div class="stat-value" style="color:var(--accent3)">${fmt(totalRev)}</div></div>
     <div class="stat-card red"><div class="stat-icon">📤</div><div class="stat-label">Total dépenses</div><div class="stat-value" style="color:var(--danger)">${fmt(totalDep)}</div></div>
     <div class="stat-card ${solde>=0?'green':'red'}"><div class="stat-icon">⚖️</div><div class="stat-label">Solde net</div><div class="stat-value" style="color:${solde>=0?'var(--accent3)':'var(--danger)'}">${fmt(solde)}</div></div>
-    <div class="stat-card blue"><div class="stat-icon">📱</div><div class="stat-label">Solde Compte Mobile</div><div class="stat-value" style="color:${solde_mobile>=0?'var(--accent)':'var(--danger)'}">${fmt(solde_mobile)}</div></div>
-    <div class="stat-card green"><div class="stat-icon">💵</div><div class="stat-label">Solde Espèces</div><div class="stat-value" style="color:${solde_espece>=0?'var(--accent3)':'var(--danger)'}">${fmt(solde_espece)}</div></div>
+    ${revCompteCards}
   `;
 
   const tbody=document.getElementById('revenusBody');
@@ -2906,6 +2949,233 @@ function renderDepensiers(){
 // ═══════════════════════════════════════════════════════
 //  CATÉGORIES
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  COMPTES
+// ═══════════════════════════════════════════════════════
+let _editCmpId = null;
+
+// ── Presets de comptes ──────────────────────────────────
+const COMPTE_PRESETS = [
+  {nom:'Wave',      icon:'🌊', couleur:'#1ABCFE', imgKey:'preset_wave'},
+  {nom:'MTN',       icon:'📡', couleur:'#FFCC00', imgKey:'preset_mtn'},
+  {nom:'Orange',    icon:'🟠', couleur:'#FF6600', imgKey:'preset_orange'},
+  {nom:'Moov',      icon:'🔵', couleur:'#0066FF', imgKey:'preset_moov'},
+  {nom:'Espèces',   icon:'💵', couleur:'#34d399', imgKey:'preset_espece'},
+  {nom:'Familial',  icon:'👨‍👩‍👧', couleur:'#a78bfa', imgKey:'preset_familial'},
+];
+
+// Image temporaire en cours d'édition (base64 ou '')
+let _cmpImgTemp = null; // null = inchangé, '' = supprimé, 'data:...' = nouvelle image
+
+function cmpGetLogoKey(id){ return 'compte_logo_' + id; }
+
+function cmpSaveLogoToStorage(id, dataUrl){
+  try {
+    const imgs = loadImages();
+    imgs[cmpGetLogoKey(id)] = dataUrl;
+    localStorage.setItem(IMAGES_KEY, JSON.stringify(imgs));
+  } catch(e){ toast('⚠️ Image trop lourde','error'); }
+}
+
+function cmpDeleteLogoFromStorage(id){
+  const imgs = loadImages();
+  delete imgs[cmpGetLogoKey(id)];
+  localStorage.setItem(IMAGES_KEY, JSON.stringify(imgs));
+}
+
+function cmpGetLogo(id){
+  const imgs = loadImages();
+  return imgs[cmpGetLogoKey(id)] || '';
+}
+
+function cmpLoadImage(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _cmpImgTemp = e.target.result;
+    const prev = document.getElementById('cmpImgPreview');
+    prev.innerHTML = `<img src="${_cmpImgTemp}" style="width:100%;height:100%;object-fit:cover">`;
+    document.getElementById('cmpImgRemoveBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function cmpRemoveImage(){
+  _cmpImgTemp = '';
+  const prev = document.getElementById('cmpImgPreview');
+  prev.innerHTML = document.getElementById('cmpIcon').value || '🏦';
+  document.getElementById('cmpImgRemoveBtn').style.display = 'none';
+}
+
+function cmpApplyPreset(preset){
+  document.getElementById('cmpNom').value     = preset.nom;
+  document.getElementById('cmpIcon').value    = preset.icon;
+  document.getElementById('cmpCouleur').value = preset.couleur;
+  // Charger l'image preset si elle existe
+  const imgs = loadImages();
+  const presetImg = imgs[preset.imgKey] || '';
+  const prev = document.getElementById('cmpImgPreview');
+  if(presetImg){
+    _cmpImgTemp = presetImg;
+    prev.innerHTML = `<img src="${presetImg}" style="width:100%;height:100%;object-fit:cover">`;
+    document.getElementById('cmpImgRemoveBtn').style.display = 'block';
+  } else {
+    _cmpImgTemp = null;
+    prev.innerHTML = preset.icon;
+    document.getElementById('cmpImgRemoveBtn').style.display = 'none';
+  }
+}
+
+function openCompteModal(id=null){
+  if(!isAdmin()){toast('⛔ Admin uniquement','error');return;}
+  _editCmpId = id;
+  _cmpImgTemp = null;
+  const c = id ? db.comptes[id] : null;
+  document.getElementById('cmpIcon').value    = c?.icon    || '🏦';
+  document.getElementById('cmpNom').value     = c?.nom     || '';
+  document.getElementById('cmpCouleur').value = c?.couleur || '#38bdf8';
+  document.getElementById('cmpSolde').value   = c?.soldeInitial || 0;
+
+  // Aperçu image existante
+  const prev = document.getElementById('cmpImgPreview');
+  const removeBtn = document.getElementById('cmpImgRemoveBtn');
+  const existingLogo = id ? cmpGetLogo(id) : '';
+  if(existingLogo){
+    prev.innerHTML = `<img src="${existingLogo}" style="width:100%;height:100%;object-fit:cover">`;
+    removeBtn.style.display = 'block';
+  } else {
+    prev.innerHTML = c?.icon || '🏦';
+    removeBtn.style.display = 'none';
+  }
+
+  // Rendre les presets
+  const presetsEl = document.getElementById('cmpPresets');
+  presetsEl.innerHTML = COMPTE_PRESETS.map(p => {
+    const imgs = loadImages();
+    const pImg = imgs[p.imgKey];
+    const thumb = pImg
+      ? `<img src="${pImg}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+      : `<span style="font-size:18px">${p.icon}</span>`;
+    return `<button onclick="cmpApplyPreset(${JSON.stringify(p).replace(/"/g,'&quot;')})" title="${p.nom}"
+      style="width:44px;height:44px;border-radius:10px;border:2px solid ${p.couleur}44;background:${p.couleur}18;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;
+             flex-shrink:0" title="${p.nom}">${thumb}</button>`;
+  }).join('');
+
+  openModal('modalCompte');
+}
+
+function saveCompte(){
+  const nom = document.getElementById('cmpNom').value.trim();
+  if(!nom){toast('⚠️ Entrez un nom','error');return;}
+  const icon    = document.getElementById('cmpIcon').value.trim() || '🏦';
+  const couleur = document.getElementById('cmpCouleur').value     || '#38bdf8';
+  const soldeInitial = Number(document.getElementById('cmpSolde').value) || 0;
+
+  let compteId;
+  if(_editCmpId){
+    compteId = _editCmpId;
+    db.comptes[compteId] = Object.assign({}, db.comptes[compteId], {nom, icon, couleur, soldeInitial});
+    toast('✅ Compte modifié','success');
+  } else {
+    compteId = 'cmp_' + nom.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'') + '_' + Date.now().toString(36);
+    db.comptes[compteId] = {id:compteId, nom, icon, couleur, soldeInitial};
+    toast('✅ Compte ajouté','success');
+  }
+
+  // Sauvegarder l'image si modifiée
+  if(_cmpImgTemp === ''){
+    cmpDeleteLogoFromStorage(compteId);
+  } else if(_cmpImgTemp){
+    cmpSaveLogoToStorage(compteId, _cmpImgTemp);
+  }
+
+  saveDB();
+  closeModal('modalCompte');
+  renderComptes();
+  refreshCompteSelects();
+}
+
+function deleteCompte(id){
+  const reserved = ['mobile','espece'];
+  if(reserved.includes(id)){toast('⛔ Ce compte ne peut pas être supprimé','error');return;}
+  const usedDep = db.depenses.some(d=>(d.compte||'espece')===id);
+  const usedRev = db.revenus.some(r=>(r.compte||'mobile')===id);
+  const usedTr  = db.transferts.some(t=>t.de===id||t.vers===id);
+  if(usedDep||usedRev||usedTr){toast('⛔ Ce compte a des opérations liées','error');return;}
+  confirm2('Supprimer','Supprimer ce compte ?',()=>{
+    cmpDeleteLogoFromStorage(id);
+    delete db.comptes[id];
+    saveDB();
+    renderComptes();
+    refreshCompteSelects();
+    toast('🗑️ Compte supprimé','info');
+  });
+}
+
+function cmpLogoHtml(c, size=40, radius=12){
+  const logo = cmpGetLogo(c.id);
+  if(logo){
+    return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;overflow:hidden;flex-shrink:0;border:1px solid ${c.couleur}33"><img src="${logo}" style="width:100%;height:100%;object-fit:cover"></div>`;
+  }
+  return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${c.couleur}22;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.5)}px;flex-shrink:0">${c.icon}</div>`;
+}
+
+function renderComptes(){
+  const el = document.getElementById('compteList');
+  if(!el) return;
+  const comptes = Object.values(db.comptes||{});
+  if(!comptes.length){
+    el.innerHTML='<div class="empty-state"><div class="es-icon">🏦</div><h3>Aucun compte</h3></div>';
+    return;
+  }
+  el.innerHTML = comptes.map(c=>{
+    const solde = getSoldeCompte(c.id);
+    const reserved = ['mobile','espece'].includes(c.id);
+    return `<div class="flex mb-4" style="align-items:center;gap:12px;flex-wrap:wrap">
+      ${cmpLogoHtml(c, 44, 12)}
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:14px;font-weight:700">${c.nom}</div>
+        <div style="font-size:12px;color:${solde>=0?'var(--accent3)':'var(--danger)'}">Solde : ${fmt(solde)}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${isAdmin()?`<button class="btn btn-ghost btn-sm btn-icon" onclick="openCompteModal('${c.id}')">✏️</button>`:''}
+        ${isAdmin()&&!reserved?`<button class="btn btn-danger btn-sm btn-icon" onclick="deleteCompte('${c.id}')">🗑️</button>`:''}
+      </div>
+    </div>`;
+  }).join('<div class="divider"></div>');
+}
+
+// Met à jour dynamiquement tous les <select> de comptes dans l'app
+function refreshCompteSelects(){
+  const comptes = Object.values(db.comptes||{});
+  const selectIds = [
+    'filterDepCompte','filterRevCompte',
+    'depCompte','revCompte',
+    'trDe','trVers',
+    'periodeCompte'
+  ];
+  selectIds.forEach(sid=>{
+    const sel = document.getElementById(sid);
+    if(!sel) return;
+    const current = sel.value;
+    // Garder la première option vide si présente (filtre "Tous")
+    const firstOpt = sel.options[0]?.value==='' ? sel.options[0] : null;
+    sel.innerHTML = '';
+    if(firstOpt) sel.appendChild(firstOpt);
+    comptes.forEach(c=>{
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.icon + ' ' + c.nom;
+      sel.appendChild(o);
+    });
+    // Restaurer la valeur sélectionnée si possible
+    if([...sel.options].some(o=>o.value===current)) sel.value = current;
+  });
+}
+
 let _editCatId=null;
 
 function openCatModal(id=null){
@@ -3153,25 +3423,28 @@ function genRapportDep(){
 //  TRANSFERTS
 // ═══════════════════════════════════════════════════════
 function getSoldeCompte(cpt){
+  const c = db.comptes&&db.comptes[cpt];
+  const soldeInit = c?.soldeInitial || 0;
   const rev = db.revenus.filter(r=>(r.compte||'mobile')===cpt).reduce((s,r)=>s+Number(r.montant),0);
   const dep = db.depenses.filter(d=>(d.compte||'espece')===cpt).reduce((s,d)=>s+Number(d.montant),0);
   const trIn  = db.transferts.filter(t=>t.vers===cpt).reduce((s,t)=>s+Number(t.montant),0);
   const trOut = db.transferts.filter(t=>t.de===cpt).reduce((s,t)=>s+Number(t.montant),0);
-  return rev - dep + trIn - trOut;
+  return soldeInit + rev - dep + trIn - trOut;
 }
 
 function compteLabel(cpt){
-  return cpt==='mobile' ? '📱 Compte Mobile' : '💵 Espèces';
+  const c = getCompte(cpt);
+  return c.icon + ' ' + c.nom;
 }
 
 function renderTransferts(){
-  // Soldes
-  const sm = getSoldeCompte('mobile');
-  const se = getSoldeCompte('espece');
-  document.getElementById('transfertSoldes').innerHTML=`
-    <div class="stat-card blue"><div class="stat-icon">📱</div><div class="stat-label">Compte Mobile</div><div class="stat-value" style="color:${sm>=0?'var(--accent)':'var(--danger)'}">${fmt(sm)}</div></div>
-    <div class="stat-card green"><div class="stat-icon">💵</div><div class="stat-label">Espèces</div><div class="stat-value" style="color:${se>=0?'var(--accent3)':'var(--danger)'}">${fmt(se)}</div></div>
-  `;
+  // Soldes dynamiques
+  const comptesArr = Object.values(db.comptes||{});
+  document.getElementById('transfertSoldes').innerHTML = comptesArr.map(c=>{
+    const s = getSoldeCompte(c.id);
+    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+  }).join('');
+  refreshCompteSelects();
   // Historique
   const tbody = document.getElementById('transfertsBody');
   const list = [...(db.transferts||[])].sort((a,b)=>b.date.localeCompare(a.date));
@@ -3191,24 +3464,20 @@ function renderTransferts(){
 
 function openTransfertModal(){
   if(!isAdmin()){toast('⛔ Admin uniquement','error');return;}
+  refreshCompteSelects();
   document.getElementById('trDate').value = today();
   document.getElementById('trMontant').value = '';
-  document.getElementById('trDe').value = 'espece';
-  document.getElementById('trVers').value = 'mobile';
   document.getElementById('trDesc').value = '';
   document.getElementById('transfertPreview').style.display='none';
-  // Soldes dans modal
-  const sm = getSoldeCompte('mobile'), se = getSoldeCompte('espece');
-  document.getElementById('transfertModalSoldes').innerHTML=`
-    <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:11px;color:var(--text2)">📱 Mobile</div>
-      <div style="font-weight:800;color:${sm>=0?'var(--accent)':'var(--danger)'}">${fmt(sm)}</div>
-    </div>
-    <div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:11px;color:var(--text2)">💵 Espèces</div>
-      <div style="font-weight:800;color:${se>=0?'var(--accent3)':'var(--danger)'}">${fmt(se)}</div>
-    </div>
-  `;
+  // Soldes dynamiques dans modal
+  const comptesArr = Object.values(db.comptes||{});
+  document.getElementById('transfertModalSoldes').innerHTML = comptesArr.map(c=>{
+    const s = getSoldeCompte(c.id);
+    return `<div style="background:${c.couleur}18;border:1px solid ${c.couleur}33;border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:11px;color:var(--text2)">${c.icon} ${c.nom}</div>
+      <div style="font-weight:800;color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div>
+    </div>`;
+  }).join('');
   openModal('modalTransfert');
 }
 
@@ -4828,27 +5097,33 @@ function gdriveSkipRestore(){
 }
 
 // ── Sauvegarder sur Drive ────────────────────────────────
-async function gdriveSyncNow(){
-  if(!gdriveToken){ toast('⚠️ Drive non connecté','error'); return; }
+// silent=true → toast discret uniquement, pas d'overlay plein écran
+async function gdriveSyncNow(silent){
+  if(!gdriveToken){ if(!silent) toast('⚠️ Drive non connecté','error'); return; }
 
-  showProgress('☁️','Sauvegarde sur Drive…','Préparation des données');
-  setProgress(15,'préparation');
+  if(!silent){
+    showProgress('☁️','Sauvegarde sur Drive…','Préparation des données');
+    setProgress(15,'préparation');
+  }
 
   try{
-    if(!gdriveFolderId){ setProgress(25,'création du dossier'); await gdriveEnsureFolder(); }
+    if(!gdriveFolderId){
+      if(!silent) setProgress(25,'création du dossier');
+      await gdriveEnsureFolder();
+    }
 
     const payload = JSON.stringify(db, null, 2);
     const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
     const filename = `${GDRIVE_BACKUP_PREFIX}${ts}.json`;
 
-    setProgress(40,'envoi vers Google Drive');
+    if(!silent) setProgress(40,'envoi vers Google Drive');
 
     // Multipart upload
     const boundary = '-------MonBudgetCI';
     const metadata = JSON.stringify({ name: filename, parents: gdriveFolderId ? [gdriveFolderId] : [] });
     const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
 
-    setProgress(60,'transfert en cours');
+    if(!silent) setProgress(60,'transfert en cours');
 
     const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
       method:'POST',
@@ -4859,15 +5134,20 @@ async function gdriveSyncNow(){
       body
     });
 
-    setProgress(85,'finalisation');
+    if(!silent) setProgress(85,'finalisation');
 
     if(resp.ok){
       const now = new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
       localStorage.setItem('gdrive_last_sync', now);
-      setProgress(100,'sauvegarde réussie');
-      await new Promise(r=>setTimeout(r,500));
-      hideProgress();
-      toast('✅ Sauvegardé sur Drive : '+filename,'success');
+      if(!silent){
+        setProgress(100,'sauvegarde réussie');
+        await new Promise(r=>setTimeout(r,500));
+        hideProgress();
+        toast('✅ Sauvegardé sur Drive : '+filename,'success');
+      } else {
+        // Toast petit et discret pour la sauvegarde auto
+        toast('☁️ Drive synchronisé','info');
+      }
       gdriveRenderConnected();
       // Nettoyer les anciens backups (max 10)
       gdriveCleanOld();
@@ -4875,16 +5155,16 @@ async function gdriveSyncNow(){
       const err = await resp.json().catch(()=>({}));
       if(err.error?.status === 'UNAUTHENTICATED'){
         gdriveToken = null; localStorage.removeItem('gdrive_token');
-        hideProgress();
+        if(!silent) hideProgress();
         toast('⚠️ Session Drive expirée — reconnectez-vous','error');
         gdriveRenderDisconnected();
       } else {
-        hideProgress();
+        if(!silent) hideProgress();
         toast('❌ Drive : '+(err.error?.message || resp.status),'error');
       }
     }
   }catch(e){
-    hideProgress();
+    if(!silent) hideProgress();
     toast('❌ Drive : '+e.message,'error');
   }
 }
@@ -4920,7 +5200,7 @@ function gdriveStartAutoTimer(){
   if(gdriveAutoTimer) clearInterval(gdriveAutoTimer);
   if(!gdriveAutoEnabled) return;
   gdriveAutoTimer = setInterval(()=>{
-    if(gdriveToken && gdriveAutoEnabled) gdriveSyncNow();
+    if(gdriveToken && gdriveAutoEnabled) gdriveSyncNow(true);
   }, 30 * 60 * 1000);
 }
 
@@ -4937,11 +5217,23 @@ saveDB = function(){
   _origSaveDB2.apply(this, arguments);
   if(gdriveToken && gdriveAutoEnabled){
     if(window._gdriveDebounce) clearTimeout(window._gdriveDebounce);
-    window._gdriveDebounce = setTimeout(()=>{ gdriveSyncNow(); }, 6000);
+    window._gdriveDebounce = setTimeout(()=>{ gdriveSyncNow(true); }, 6000);
   }
 };
 
 // ── Déconnexion Drive ────────────────────────────────────
+// ── Ajouter / changer de compte Google ───────────────────
+function gdriveAddAccount(){
+  // Déconnexion silencieuse du compte actuel, puis relance OAuth avec sélection de compte
+  if(gdriveAutoTimer) clearInterval(gdriveAutoTimer);
+  gdriveToken = null; gdriveUser = null; gdriveFolderId = null;
+  localStorage.removeItem('gdrive_token');
+  localStorage.removeItem('gdrive_user');
+  localStorage.removeItem('gdrive_folder_id');
+  // Relancer l'OAuth (prompt=select_account forcé dans gdriveConnect)
+  gdriveConnect();
+}
+
 function gdriveDisconnect(){
   if(!confirm('Déconnecter Google Drive ?')) return;
   if(gdriveAutoTimer) clearInterval(gdriveAutoTimer);
