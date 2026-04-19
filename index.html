@@ -1975,7 +1975,10 @@ function doLogout(){
 // ═══════════════════════════════════════════════════════
 //  APP INIT
 // ═══════════════════════════════════════════════════════
-function initApp(){
+async function initApp(){
+  // Précharger les logos de comptes depuis IndexedDB (migration + cache)
+  await cmpPreloadLogos();
+
   // Afficher l'appShell (caché par défaut, affiché après splash)
   document.getElementById('appShell').style.display='flex';
 
@@ -2471,7 +2474,11 @@ function renderDashboard(){
   // Soldes dynamiques par compte
   const comptesStatCards = Object.values(db.comptes||{}).map(c=>{
     const s = getSoldeCompte(c.id);
-    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+    const logo = cmpGetLogo(c.id);
+    const iconHtml = logo
+      ? `<div class="stat-icon" style="font-size:0;margin-bottom:12px"><img src="${logo}" style="width:36px;height:36px;border-radius:10px;object-fit:cover"></div>`
+      : `<div class="stat-icon">${c.icon}</div>`;
+    return `<div class="stat-card">${iconHtml}<div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
   }).join('');
 
   document.getElementById('dashStats').innerHTML = `
@@ -2854,7 +2861,11 @@ function renderRevenus(){
   // Soldes dynamiques par compte
   const revCompteCards = Object.values(db.comptes||{}).map(c=>{
     const s = getSoldeCompte(c.id);
-    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+    const logo = cmpGetLogo(c.id);
+    const iconHtml = logo
+      ? `<div class="stat-icon" style="font-size:0;margin-bottom:12px"><img src="${logo}" style="width:36px;height:36px;border-radius:10px;object-fit:cover"></div>`
+      : `<div class="stat-icon">${c.icon}</div>`;
+    return `<div class="stat-card">${iconHtml}<div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
   }).join('');
 
   document.getElementById('revStats').innerHTML=`
@@ -2967,25 +2978,110 @@ const COMPTE_PRESETS = [
 // Image temporaire en cours d'édition (base64 ou '')
 let _cmpImgTemp = null; // null = inchangé, '' = supprimé, 'data:...' = nouvelle image
 
-function cmpGetLogoKey(id){ return 'compte_logo_' + id; }
+// ── IndexedDB pour logos de comptes (taille illimitée) ──
+const IDB_NAME    = 'monbudget_ci_idb';
+const IDB_STORE   = 'compte_logos';
+const IDB_VERSION = 1;
+
+// Cache mémoire synchrone — chargé au démarrage
+let _cmpLogosCache = {};
+
+function _idbOpen(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)){
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function cmpIdbSave(id, dataUrl){
+  try {
+    const db = await _idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(dataUrl, id);
+      tx.oncomplete = () => { _cmpLogosCache[id] = dataUrl; resolve(); };
+      tx.onerror    = e => reject(e.target.error);
+    });
+  } catch(e){ console.error('IDB save error:', e); }
+}
+
+async function cmpIdbDelete(id){
+  try {
+    const db = await _idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(id);
+      tx.oncomplete = () => { delete _cmpLogosCache[id]; resolve(); };
+      tx.onerror    = e => reject(e.target.error);
+    });
+  } catch(e){ console.error('IDB delete error:', e); }
+}
+
+async function cmpIdbLoadAll(){
+  try {
+    const db = await _idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      const result = {};
+      const curReq = store.openCursor();
+      curReq.onsuccess = e => {
+        const cursor = e.target.result;
+        if(cursor){ result[cursor.key] = cursor.value; cursor.continue(); }
+        else resolve(result);
+      };
+      curReq.onerror = e => reject(e.target.error);
+    });
+  } catch(e){ return {}; }
+}
+
+// Précharge tous les logos en mémoire au démarrage
+async function cmpPreloadLogos(){
+  // Migrer les anciens logos depuis localStorage si présents
+  try {
+    const raw = localStorage.getItem(IMAGES_KEY);
+    if(raw){
+      const imgs = JSON.parse(raw);
+      const promises = [];
+      Object.keys(imgs).forEach(k => {
+        if(k.startsWith('compte_logo_') && imgs[k]){
+          const id = k.replace('compte_logo_','');
+          promises.push(cmpIdbSave(id, imgs[k]));
+          delete imgs[k];
+        }
+      });
+      if(promises.length){
+        await Promise.all(promises);
+        localStorage.setItem(IMAGES_KEY, JSON.stringify(imgs));
+      }
+    }
+  } catch(e){}
+  // Charger depuis IDB dans le cache
+  _cmpLogosCache = await cmpIdbLoadAll();
+}
+
+// API synchrone (utilise le cache)
+function cmpGetLogo(id){
+  return _cmpLogosCache[id] || '';
+}
+
+function cmpGetLogoKey(id){ return id; } // gardé pour compatibilité
 
 function cmpSaveLogoToStorage(id, dataUrl){
-  try {
-    const imgs = loadImages();
-    imgs[cmpGetLogoKey(id)] = dataUrl;
-    localStorage.setItem(IMAGES_KEY, JSON.stringify(imgs));
-  } catch(e){ toast('⚠️ Image trop lourde','error'); }
+  _cmpLogosCache[id] = dataUrl; // mise à jour immédiate du cache
+  cmpIdbSave(id, dataUrl);       // persistance asynchrone
 }
 
 function cmpDeleteLogoFromStorage(id){
-  const imgs = loadImages();
-  delete imgs[cmpGetLogoKey(id)];
-  localStorage.setItem(IMAGES_KEY, JSON.stringify(imgs));
-}
-
-function cmpGetLogo(id){
-  const imgs = loadImages();
-  return imgs[cmpGetLogoKey(id)] || '';
+  delete _cmpLogosCache[id];
+  cmpIdbDelete(id);
 }
 
 function cmpLoadImage(event){
@@ -3442,7 +3538,11 @@ function renderTransferts(){
   const comptesArr = Object.values(db.comptes||{});
   document.getElementById('transfertSoldes').innerHTML = comptesArr.map(c=>{
     const s = getSoldeCompte(c.id);
-    return `<div class="stat-card"><div class="stat-icon">${c.icon}</div><div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
+    const logo = cmpGetLogo(c.id);
+    const iconHtml = logo
+      ? `<div class="stat-icon" style="font-size:0;margin-bottom:12px"><img src="${logo}" style="width:36px;height:36px;border-radius:10px;object-fit:cover"></div>`
+      : `<div class="stat-icon">${c.icon}</div>`;
+    return `<div class="stat-card">${iconHtml}<div class="stat-label">${c.nom}</div><div class="stat-value" style="color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div></div>`;
   }).join('');
   refreshCompteSelects();
   // Historique
@@ -3473,9 +3573,14 @@ function openTransfertModal(){
   const comptesArr = Object.values(db.comptes||{});
   document.getElementById('transfertModalSoldes').innerHTML = comptesArr.map(c=>{
     const s = getSoldeCompte(c.id);
-    return `<div style="background:${c.couleur}18;border:1px solid ${c.couleur}33;border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:11px;color:var(--text2)">${c.icon} ${c.nom}</div>
-      <div style="font-weight:800;color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div>
+    const logo = cmpGetLogo(c.id);
+    const thumbHtml = logo
+      ? `<img src="${logo}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;margin-bottom:4px">`
+      : `<span style="font-size:20px">${c.icon}</span>`;
+    return `<div style="background:${c.couleur}18;border:1px solid ${c.couleur}33;border-radius:10px;padding:10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px">
+      ${thumbHtml}
+      <div style="font-size:11px;color:var(--text2);font-weight:600">${c.nom}</div>
+      <div style="font-weight:800;font-size:13px;color:${s>=0?'var(--accent3)':'var(--danger)'}">${fmt(s)}</div>
     </div>`;
   }).join('');
   openModal('modalTransfert');
