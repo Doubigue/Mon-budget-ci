@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f2027">
 <meta name="description" content="Gestion de Dépenses Personnelles PWA">
 <title>MonBudget CI – Gestion Financière</title>
-<link rel="icon" type="image/png" href="ico.png">
+<link rel="icon" type="image/png" href="icon.png">
 <link rel="manifest" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -1312,7 +1312,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
         <!-- Section Apparence -->
         <div class="card admin-only" style="margin-top:16px">
           <div class="section-title mb-4" style="font-size:14px">🎨 Apparence de l'application</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Personnalisez le logo, l'icône et l'écran de démarrage. Les images sont stockées localement.</p>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Personnalisez le logo de l'application. L'icône et le splash sont chargés automatiquement depuis les fichiers du dépôt GitHub.</p>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
             <!-- Logo -->
@@ -1324,25 +1324,25 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:po
               <button class="btn btn-danger btn-sm" style="margin-top:6px;width:100%;font-size:11px" onclick="resetAppImage('logo')">🗑️ Réinitialiser</button>
             </div>
 
-            <!-- Icône -->
+            <!-- Icône — fichier repo -->
             <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center">
               <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📌 Icône (favicon)</div>
-              <div id="previewIcon" style="width:72px;height:72px;border-radius:16px;background:var(--bg3);border:2px dashed var(--border);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden">💰</div>
-              <label class="restore-file-label" for="uploadIcon" style="display:inline-flex;font-size:11px">📁 Choisir</label>
-              <input type="file" id="uploadIcon" accept="image/*" style="display:none" onchange="appImageUpload(event,'icon')">
-              <button class="btn btn-danger btn-sm" style="margin-top:6px;width:100%;font-size:11px" onclick="resetAppImage('icon')">🗑️ Réinitialiser</button>
+              <div id="previewIcon" style="width:72px;height:72px;border-radius:16px;background:var(--bg3);border:2px dashed var(--border);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden">
+                <img src="icon.png" style="width:100%;height:100%;object-fit:contain;border-radius:12px" onerror="this.parentElement.textContent='📌'">
+              </div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:6px">Fichier <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">icon.png</code> à la racine du dépôt GitHub</div>
             </div>
 
-            <!-- Splash -->
+            <!-- Splash — fichier repo -->
             <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center">
               <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">🚀 Écran Splash</div>
-              <div id="previewSplash" style="width:72px;height:72px;border-radius:16px;background:var(--bg3);border:2px dashed var(--border);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden">🌅</div>
-              <label class="restore-file-label" for="uploadSplash" style="display:inline-flex;font-size:11px">📁 Choisir</label>
-              <input type="file" id="uploadSplash" accept="image/*" style="display:none" onchange="appImageUpload(event,'splash')">
-              <button class="btn btn-danger btn-sm" style="margin-top:6px;width:100%;font-size:11px" onclick="resetAppImage('splash')">🗑️ Réinitialiser</button>
+              <div id="previewSplash" style="width:72px;height:72px;border-radius:16px;background:var(--bg3);border:2px dashed var(--border);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden">
+                <img src="splash.png" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.parentElement.textContent='🌅'">
+              </div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:6px">Fichier <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">splash.png</code> à la racine du dépôt GitHub</div>
             </div>
           </div>
-          <p style="font-size:11px;color:var(--text3);margin-top:12px">💡 Les images seront appliquées immédiatement et mémorisées pour les prochaines sessions.</p>
+          <p style="font-size:11px;color:var(--text3);margin-top:12px">💡 Pour changer l'icône ou le splash, déposez les fichiers <code style="background:var(--bg3);padding:1px 4px;border-radius:4px">icon.png</code> et <code style="background:var(--bg3);padding:1px 4px;border-radius:4px">splash.png</code> à la racine du repo et faites un push.</p>
         </div>
       </div>
 
@@ -3639,17 +3639,17 @@ function deleteTransfert(id){
 //  APPARENCE — logo, icône, splash
 // ═══════════════════════════════════════════════════════
 function appImageUpload(e, type){
+  if(type !== 'logo'){ toast('⚠️ Icône et splash sont définis dans le repo GitHub','info'); return; }
   const f = e.target.files[0]; if(!f) return;
-  // Vérifier la taille (max 300 KB recommandé)
   if(f.size > 500 * 1024){
-    toast('⚠️ Image trop lourde (max 500 Ko). Compressez-la avant.','error');
+    toast('⚠️ Logo trop lourd (max 500 Ko). Compressez-le avant.','error');
     return;
   }
   const reader = new FileReader();
   reader.onload = ev => {
-    saveImage(type, ev.target.result);
-    applyAppImage(type, ev.target.result);
-    toast(`✅ ${type==='logo'?'Logo':type==='icon'?'Icône':'Splash'} mis à jour`, 'success');
+    saveImage('logo', ev.target.result);
+    applyAppImage('logo', ev.target.result);
+    toast('✅ Logo mis à jour', 'success');
     renderProfile();
   };
   reader.readAsDataURL(f);
@@ -3662,41 +3662,39 @@ function applyAppImage(type, src){
     // Splash logo box
     const splashLogo = document.querySelector('.splash-logo');
     if(splashLogo){ splashLogo.src=src; splashLogo.style.display='block'; }
-  } else if(type==='icon'){
-    const link = document.getElementById('manifest-link') || document.querySelector('link[rel="icon"]');
-    if(link){ link.href = src; }
-    // Preview
-    const prev = document.getElementById('previewIcon');
+    // Preview box
+    const prev = document.getElementById('previewLogo');
     if(prev) prev.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:contain;border-radius:12px">`;
-  } else if(type==='splash'){
-    // Splash background
-    let sbg = document.querySelector('.splash-bg-img');
-    if(!sbg){
-      sbg = document.createElement('img');
-      sbg.className='splash-bg-img';
-      const sc = document.getElementById('splashScreen');
-      if(sc) sc.prepend(sbg);
-    }
-    if(sbg){ sbg.src=src; sbg.style.display='block'; }
   }
-  // Preview box
-  const prev = document.getElementById('preview'+type.charAt(0).toUpperCase()+type.slice(1));
-  if(prev && type!=='icon') prev.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:contain;border-radius:12px">`;
+  // icon et splash sont gérés par les fichiers icon.png / splash.png du repo — pas de localStorage
 }
 
 function resetAppImage(type){
-  confirm2('Réinitialiser',`Réinitialiser l'image "${type}" par défaut ?`,()=>{
-    resetImageStorage(type);
+  if(type !== 'logo'){ toast('ℹ️ Supprimez le fichier dans le repo GitHub pour réinitialiser','info'); return; }
+  confirm2('Réinitialiser','Supprimer le logo personnalisé ?',()=>{
+    resetImageStorage('logo');
     renderProfile();
-    toast(`🗑️ Image "${type}" réinitialisée`,'info');
+    toast('🗑️ Logo réinitialisé','info');
   });
 }
 
 function loadSavedAppImages(){
+  // Logo : depuis localStorage (uploadable)
   const imgs = loadImages();
-  ['logo','icon','splash'].forEach(type=>{
-    if(imgs[type]) applyAppImage(type, imgs[type]);
-  });
+  if(imgs['logo']) applyAppImage('logo', imgs['logo']);
+
+  // Icône favicon : depuis icon.png dans le repo
+  const iconLink = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="shortcut icon"]');
+  if(iconLink){
+    const testIcon = new Image();
+    testIcon.onload = () => { iconLink.href = 'icon.png'; };
+    testIcon.src = 'icon.png';
+  }
+
+  // Splash : splash.png est déjà référencé directement dans le HTML,
+  // on met à jour le favicon PWA manifest si présent
+  const manifestLink = document.querySelector('link[rel="manifest"]');
+  // rien à faire, splash.png est dans le <img src="splash.png"> du HTML
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3715,16 +3713,15 @@ function renderProfile(){
   if(isAdmin()){
     document.getElementById('profileEditName').value=u.name;
     document.getElementById('profileEditEmail').value=u.email;
-    // Aperçu images appli
+    // Aperçu logo (localStorage)
     const imgs = loadImages();
-    ['logo','icon','splash'].forEach(type=>{
-      const prev = document.getElementById('preview'+type.charAt(0).toUpperCase()+type.slice(1));
-      if(prev){
-        prev.innerHTML = imgs[type]
-          ? `<img src="${imgs[type]}" style="width:100%;height:100%;object-fit:contain;border-radius:12px">`
-          : (type==='splash'?'🌅':'💰');
-      }
-    });
+    const prevLogo = document.getElementById('previewLogo');
+    if(prevLogo){
+      prevLogo.innerHTML = imgs['logo']
+        ? `<img src="${imgs['logo']}" style="width:100%;height:100%;object-fit:contain;border-radius:12px">`
+        : '💰';
+    }
+    // Aperçu icon et splash → depuis fichiers repo (déjà dans le HTML, pas besoin de les recharger)
   }
 }
 
@@ -4480,7 +4477,10 @@ const manifest={
   description:'Gestion de dépenses personnelles',
   start_url:'.',display:'standalone',
   background_color:'#0a0f1e',theme_color:'#0f2027',
-  icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>",sizes:'any',type:'image/svg+xml'}]
+  icons:[
+    {src:'icon.png',sizes:'192x192',type:'image/png'},
+    {src:'icon.png',sizes:'512x512',type:'image/png'}
+  ]
 };
 const mblob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
 document.getElementById('manifest-link').href=URL.createObjectURL(mblob);
